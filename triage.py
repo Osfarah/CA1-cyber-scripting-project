@@ -26,5 +26,20 @@ def get_file_info(file_path):
     }
 
 
+def scan_folder(folder_path):
+    """Return a list of file-info dictionaries for every file in a folder."""
+    results = []
+
+    for name in sorted(os.listdir(folder_path)):
+        full_path = os.path.join(folder_path, name)
+
+        if os.path.isfile(full_path):
+            info = get_file_info(full_path)
+            results.append(info)
+
+    return results
+
+
 # Temporary test - we'll remove this later
-print(get_file_info("data/samples/sample_d.bin"))
+for file in scan_folder("data/samples"):
+    print(file["filename"], file["size_bytes"], file["sha256"])
