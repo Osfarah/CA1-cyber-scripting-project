@@ -1,3 +1,4 @@
+import csv
 import hashlib
 import os
 from datetime import datetime
@@ -40,6 +41,45 @@ def scan_folder(folder_path):
     return results
 
 
+def load_reference_hashes(csv_path):
+    """Read the reference CSV and return a dictionary of {sha256: label}."""
+    reference = {}
+
+    try:
+        with open(csv_path, "r", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+
+            for row in reader:
+                sha = (row.get("sha256") or "").strip().lower()
+                label = (row.get("label") or "").strip()
+
+                if len(sha) == 64 and all(c in "0123456789abcdef" for c in sha):
+                    reference[sha] = label
+                else:
+                    print(f"Warning: skipping invalid reference row: {row}")
+
+    except FileNotFoundError:
+        print(f"Error: reference file not found: {csv_path}")
+
+    return reference
+
+
+def classify_files(files, reference):
+    """Add a KNOWN/UNKNOWN status and label to each file dictionary."""
+    for file in files:
+        if file["sha256"] in reference:
+            file["status"] = "KNOWN"
+            file["label"] = reference[file["sha256"]]
+        else:
+            file["status"] = "UNKNOWN"
+            file["label"] = "-"
+
+    return files
+
+
 # Temporary test - we'll remove this later
-for file in scan_folder("data/samples"):
-    print(file["filename"], file["size_bytes"], file["sha256"])
+files = scan_folder("data/samples")
+reference = load_reference_hashes("data/hashes_reference.csv")
+
+for file in classify_files(files, reference):
+    print(f"{file['filename']:<15} {file['status']:<8} {file['label']}")
