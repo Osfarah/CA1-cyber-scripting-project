@@ -77,9 +77,33 @@ def classify_files(files, reference):
     return files
 
 
-# Temporary test - we'll remove this later
+def find_duplicates(files):
+    """Group files by hash and return only hashes shared by 2+ files."""
+    groups = {}
+
+    for file in files:
+        sha = file["sha256"]
+        if sha not in groups:
+            groups[sha] = []
+        groups[sha].append(file["filename"])
+
+    duplicates = {}
+    for sha, names in groups.items():
+        if len(names) > 1:
+            duplicates[sha] = names
+
+    return duplicates
+
+
+
 files = scan_folder("data/samples")
 reference = load_reference_hashes("data/hashes_reference.csv")
 
 for file in classify_files(files, reference):
     print(f"{file['filename']:<15} {file['status']:<8} {file['label']}")
+
+duplicates = find_duplicates(files)
+print(f"\nDuplicate groups found: {len(duplicates)}")
+
+for sha, names in duplicates.items():
+    print(f"  {sha[:16]}...  ->  {', '.join(names)}")
